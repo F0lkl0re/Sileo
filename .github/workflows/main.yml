@@ -70,8 +70,8 @@ jobs:
       - name: Zebraaaaaaaaaaaaa
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-          run: |
-            git clone "${{ secrets.AYOWHYUEVENLOOKING }}"
+        run: |
+          git clone "${{ secrets.AYOWHYUEVENLOOKING }}"
       - name: Copy Procursus to Cache Location
         run: |
           sudo mkdir -p ~/__cache
