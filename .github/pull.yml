@@ -1,0 +1,6 @@
+version: "1"
+rules:
+  - base: dev
+    upstream: Sileo:dev
+    mergeMethod: merge
+    mergeUnstable: true
