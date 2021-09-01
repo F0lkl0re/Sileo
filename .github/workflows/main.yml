@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup Procursus Bootstrap (install)
         if: steps.procache.outputs.cache-hit != 'true'
         run: |
