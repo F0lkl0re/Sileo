@@ -563,7 +563,7 @@ final class DownloadManager {
         reloadData(recheckPackages: recheckPackages, completion: nil)
     }
     
-    public func reloadData(recheckPackages: Bool, completion: (() -> Void)?) {
+    public func reloadData(recheckPackages: Bool, backgroundBypass: Bool = false, completion: (() -> Void)?) {
         DownloadManager.aptQueue.async { [self] in
             if recheckPackages {
                 do {
@@ -576,9 +576,11 @@ final class DownloadManager {
             }
             DispatchQueue.main.async {
                 self.viewController.reloadData()
+                if backgroundBypass {
+                    completion?()
+                }
                 TabBarController.singleton?.updatePopup(completion: completion)
                 NotificationCenter.default.post(name: DownloadManager.reloadNotification, object: nil)
-                completion?()
             }
         }
     }
@@ -819,5 +821,20 @@ final class DownloadManager {
         guard let sourceRepo = package.sourceRepo,
               allowedHosts.contains(sourceRepo.url?.host ?? "") else { return false }
         return package.essential == "yes"
+    }
+    
+    public func performOperations(progressCallback: @escaping (Double, Bool, String, String) -> Void,
+                                  outputCallback: @escaping (String, Int) -> Void,
+                                  completionCallback: @escaping (Int, APTWrapper.FINISH, Bool) -> Void) {
+        var installs: [DownloadPackage] = installations.raw.sorted(by: { $0.package.name?.lowercased() ?? "" < $1.package.name?.lowercased() ?? "" })
+        installs += upgrades.raw.sorted(by: { $0.package.name?.lowercased() ?? "" < $1.package.name?.lowercased() ?? "" })
+        let removals: [DownloadPackage] = uninstallations.raw.sorted(by: { $0.package.name?.lowercased() ?? "" < $1.package.name?.lowercased() ?? "" })
+        let installdeps = installdeps.raw.sorted(by: { $0.package.name?.lowercased() ?? "" < $1.package.name?.lowercased() ?? "" })
+        APTWrapper.performOperations(installs: installs,
+                                     removals: removals,
+                                     installDeps: installdeps,
+                                     progressCallback: progressCallback,
+                                     outputCallback: outputCallback,
+                                     completionCallback: completionCallback)
     }
 }
