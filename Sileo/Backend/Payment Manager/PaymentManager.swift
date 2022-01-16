@@ -14,6 +14,16 @@ class PaymentManager {
     var paymentProvidersForURL = [String: PaymentProvider]()
     var paymentProvidersForEndpoint = [String: PaymentProvider]()
     
+    func removeProviders(for repo: Repo) {
+        print("Providers for URL = \(paymentProvidersForURL)\nProviders for Endpoint = \(paymentProvidersForEndpoint)\nDownload Provider = \(DownloadManager.shared.repoDownloadOverrideProviders)")
+        guard let sourceRepo = repo.url?.absoluteString.lowercased() else { return }
+        if let provider = paymentProvidersForURL[sourceRepo] {
+            paymentProvidersForURL[sourceRepo] = nil
+            paymentProvidersForEndpoint[provider.baseURL.absoluteString] = nil
+        }
+        DownloadManager.shared.repoDownloadOverrideProviders[sourceRepo] = nil
+    }
+    
     func getAllPaymentProviders(completion: @escaping (Set<PaymentProvider>) -> Void) {
         let group = DispatchGroup()
         var providers = Set<PaymentProvider>()
@@ -54,10 +64,14 @@ class PaymentManager {
                     return completion(PaymentError(error: error), nil)
             }
             // Decode response
-            guard let endpoint = String(data: data, encoding: .utf8) else {
+            guard var endpoint = String(data: data, encoding: .utf8) else {
                 return completion(PaymentError.noPaymentProvider, nil)
             }
-            guard let endpointURL = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)),
+            endpoint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+            if endpoint.last != "/" {
+                endpoint += "/"
+            }
+            guard let endpointURL = URL(string: endpoint),
                 endpointURL.isSecure else {
                     return completion(PaymentError.noPaymentProvider, nil)
             }
